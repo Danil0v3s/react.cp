@@ -1,4 +1,7 @@
-export const Settings =  {
+const dotenv = require('dotenv-safe');
+dotenv.config();
+
+export const Settings = {
     /** account */
     usernameCaseSensitive:          false,
     allowDuplicateEmail:            false,
@@ -20,5 +23,9 @@ export const Settings =  {
 }
 
 export const Env = {
-    loginDatabase:                  'ragnarok'
+    loginDatabase:                    'ragnarok',
+    DB_HOST:                          process.env.DB_HOST,
+    DB_USER:                          process.env.DB_USER,
+    DB_PASS:                          process.env.DB_PASS,
+    DB_SCHEMA:                        process.env.DB_SCHEMA,
 }
