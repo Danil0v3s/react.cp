@@ -16,37 +16,45 @@ export default async (req, res) => {
         })
     }
 
-    if (checkDuplicateUsername(username)) {
+    if (checkDuplicateUsername(sqlPool, username)) {
         throw Exception()
     }
 
-    if (!Settings.allowDuplicateEmail && checkDuplicateEmail(email)) {
+    if (!Settings.allowDuplicateEmail && checkDuplicateEmail(sqlPool, email)) {
         throw Exception()
     }
 
     register(req.sqlPool, req.body, res);
 }
 
-function checkDuplicateEmail(email) {
+async function checkDuplicateEmail(sqlPool, email) {
     const query = `SELECT email FROM ${Env.loginDatabase}.login WHERE email = ? LIMIT 1`;
-}
-
-function checkDuplicateUsername(username) {
-    const query = `SELECT userid FROM ${Env.loginDatabase}.login WHERE ${Settings.usernameCaseSensitive ? 'LOWER(userid) = LOWER(?)' : 'BINARY userid = ?'} LIMIT 1`;
-}
-
-function register(sqlPool, { username, password, email, gender, birthdate }, res) {
-    const query = `INSERT INTO ${Env.loginDatabase}.login  (userid, user_pass, email, sex, group_id, birthdate) VALUES (?, ?, ?, ?, ?, ?)`;
-    sqlPool.query(query, [username, password, email, gender, Settings.accountDefaultGroupId, birthdate], (error, results, fields) => {
-        if (error) {
-            res.status(INTERNAL_SERVER_ERROR).json({
-                message: error.message,
-                status: INTERNAL_SERVER_ERROR
-            })
-        }
-
+    try {
+        const [rows, fields] = await sqlPool.query(query, [email]);
         
-    })
+    } catch (ex) {
+        throw ex
+    }
+}
+
+async function checkDuplicateUsername(sqlPool, username) {
+    const query = `SELECT userid FROM ${Env.loginDatabase}.login WHERE ${Settings.usernameCaseSensitive ? 'LOWER(userid) = LOWER(?)' : 'BINARY userid = ?'} LIMIT 1`;
+    try {
+        const [rows, fields] = await sqlPool.query(query, [username]);
+
+    } catch (ex) {
+        throw ex;
+    }
+}
+
+async function register(sqlPool, { username, password, email, gender, birthdate }) {
+    const query = `INSERT INTO ${Env.loginDatabase}.login  (userid, user_pass, email, sex, group_id, birthdate) VALUES (?, ?, ?, ?, ?, ?)`;
+    try {
+        const [rows, fields] = await sqlPool.query(query, [username, password, email, gender, Settings.accountDefaultGroupId, birthdate]);
+
+    } catch (ex) {
+        throw ex;
+    }
 }
 
 function validateRequestBody({ username, password, passwordConfirm, email, emailConfirm, gender }) {
