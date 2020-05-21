@@ -3,7 +3,7 @@ const { METHOD_NOT_ALLOWED, BAD_REQUEST, INTERNAL_SERVER_ERROR, CREATED } = requ
 
 export default async (req, res) => {
     if (req.method !== 'POST') {
-        return res.status(METHOD_NOT_ALLOWED).send();
+        return res.status(METHOD_NOT_ALLOWED);
     }
 
     const { username, email } = req.body;
@@ -17,25 +17,23 @@ export default async (req, res) => {
     }
 
     try {
-        if (checkDuplicateUsername(sqlPool, username)) {
+        if (await checkDuplicateUsername(sqlPool, username)) {
             return res.status(BAD_REQUEST).json({
                 status: BAD_REQUEST,
                 message: 'Username is already taken'
             })
         }
 
-        if (!Settings.allowDuplicateEmail && checkDuplicateEmail(sqlPool, email)) {
+        if (!Settings.allowDuplicateEmail && await checkDuplicateEmail(sqlPool, email)) {
             return res.status(BAD_REQUEST).json({
                 status: BAD_REQUEST,
                 message: 'E-mail address is already taken'
             })
         }
 
-        register(req.sqlPool, req.body);
+        await register(req.sqlPool, req.body);
 
-        return res.status(CREATED).json({
-            username: 'xpto'
-        });
+        return res.status(CREATED);
     } catch (ex) {
         return res.status(BAD_REQUEST).json({
             status: INTERNAL_SERVER_ERROR,
@@ -50,7 +48,7 @@ async function checkDuplicateEmail(sqlPool, email) {
         const [rows, fields] = await sqlPool.query(query, [email]);
 
     } catch (ex) {
-        throw ex
+        throw ex;
     }
 }
 
@@ -105,5 +103,5 @@ function validateRequestBody({ username, password, passwordConfirm, email, email
         return 'Emails do not match';
     } else if (!['M', 'F'].contains(gender)) {
         return 'Invalid gender';
-    } else return null
+    } else return null;
 }
