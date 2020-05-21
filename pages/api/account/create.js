@@ -1,5 +1,5 @@
 const { Settings, Env } = require('../../../config');
-const { METHOD_NOT_ALLOWED, BAD_REQUEST, INTERNAL_SERVER_ERROR } = require('http-status');
+const { METHOD_NOT_ALLOWED, BAD_REQUEST, INTERNAL_SERVER_ERROR, CREATED } = require('http-status');
 
 export default async (req, res) => {
     if (req.method !== 'POST') {
@@ -16,22 +16,39 @@ export default async (req, res) => {
         })
     }
 
-    if (checkDuplicateUsername(sqlPool, username)) {
-        throw Exception()
-    }
+    try {
+        if (checkDuplicateUsername(sqlPool, username)) {
+            return res.status(BAD_REQUEST).json({
+                status: BAD_REQUEST,
+                message: 'Username is already taken'
+            })
+        }
 
-    if (!Settings.allowDuplicateEmail && checkDuplicateEmail(sqlPool, email)) {
-        throw Exception()
-    }
+        if (!Settings.allowDuplicateEmail && checkDuplicateEmail(sqlPool, email)) {
+            return res.status(BAD_REQUEST).json({
+                status: BAD_REQUEST,
+                message: 'E-mail address is already taken'
+            })
+        }
 
-    register(req.sqlPool, req.body, res);
+        register(req.sqlPool, req.body);
+
+        return res.status(CREATED).json({
+            username: 'xpto'
+        });
+    } catch (ex) {
+        return res.status(BAD_REQUEST).json({
+            status: INTERNAL_SERVER_ERROR,
+            message: ex.message
+        })
+    }
 }
 
 async function checkDuplicateEmail(sqlPool, email) {
     const query = `SELECT email FROM ${Env.loginDatabase}.login WHERE email = ? LIMIT 1`;
     try {
         const [rows, fields] = await sqlPool.query(query, [email]);
-        
+
     } catch (ex) {
         throw ex
     }
