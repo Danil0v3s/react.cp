@@ -1,6 +1,11 @@
-const { Settings, Env } = require('../../../config')
+const { Settings, Env } = require('../../../config');
+const httpStatus = require('http-status');
 
 export default async (req, res) => {
+    if (req.method !== 'POST') {
+        return res.status(httpStatus.METHOD_NOT_ALLOWED).send();
+    }
+
     const {
         serverGroupName,
         username,
