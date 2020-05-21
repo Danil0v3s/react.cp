@@ -3,7 +3,10 @@ const { METHOD_NOT_ALLOWED, BAD_REQUEST, INTERNAL_SERVER_ERROR, CREATED } = requ
 
 export default async (req, res) => {
     if (req.method !== 'POST') {
-        return res.status(METHOD_NOT_ALLOWED);
+        return res.status(METHOD_NOT_ALLOWED).json({
+            status: METHOD_NOT_ALLOWED,
+            message: 'Method not allowed'
+        });
     }
 
     const { username, email } = req.body;
@@ -17,23 +20,27 @@ export default async (req, res) => {
     }
 
     try {
-        if (await checkDuplicateUsername(sqlPool, username)) {
+        if (await checkDuplicateUsername(req.sqlPool, username)) {
             return res.status(BAD_REQUEST).json({
                 status: BAD_REQUEST,
                 message: 'Username is already taken'
             })
         }
 
-        if (!Settings.allowDuplicateEmail && await checkDuplicateEmail(sqlPool, email)) {
+        if (!Settings.allowDuplicateEmail && await checkDuplicateEmail(req.sqlPool, email)) {
             return res.status(BAD_REQUEST).json({
                 status: BAD_REQUEST,
                 message: 'E-mail address is already taken'
             })
         }
 
-        await register(req.sqlPool, req.body);
+        const result = await register(req.sqlPool, req.body);
 
-        return res.status(CREATED);
+        return res.status(CREATED).json({
+            status: CREATED,
+            message: 'User registered successfully',
+            insertId: result.insertId
+        });
     } catch (ex) {
         return res.status(BAD_REQUEST).json({
             status: INTERNAL_SERVER_ERROR,
@@ -66,7 +73,7 @@ async function register(sqlPool, { username, password, email, gender, birthdate 
     const query = `INSERT INTO ${Env.loginDatabase}.login  (userid, user_pass, email, sex, group_id, birthdate) VALUES (?, ?, ?, ?, ?, ?)`;
     try {
         const [rows, fields] = await sqlPool.query(query, [username, password, email, gender, Settings.accountDefaultGroupId, birthdate]);
-
+        return rows;
     } catch (ex) {
         throw ex;
     }
@@ -101,7 +108,7 @@ function validateRequestBody({ username, password, passwordConfirm, email, email
         return 'Invalid e-mail address';
     } else if (email != emailConfirm) {
         return 'Emails do not match';
-    } else if (!['M', 'F'].contains(gender)) {
+    } else if (!['M', 'F'].includes(gender)) {
         return 'Invalid gender';
     } else return null;
 }

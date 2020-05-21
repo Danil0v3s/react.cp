@@ -1,5 +1,5 @@
 const express = require('express');
-const mysql = require('mysql2/promise');
+const mysql = require('mysql2');
 const bluebird = require('bluebird');
 const next = require('next');
 const { Env } = require('./config');
