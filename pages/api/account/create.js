@@ -1,5 +1,5 @@
 const { Settings, Env } = require('../../../config');
-const { METHOD_NOT_ALLOWED, BAD_REQUEST } = require('http-status');
+const { METHOD_NOT_ALLOWED, BAD_REQUEST, INTERNAL_SERVER_ERROR } = require('http-status');
 
 export default async (req, res) => {
     if (req.method !== 'POST') {
@@ -24,7 +24,7 @@ export default async (req, res) => {
         throw Exception()
     }
 
-    register(req.sqlPool, req.body);
+    register(req.sqlPool, req.body, res);
 }
 
 function checkDuplicateEmail(email) {
@@ -35,8 +35,18 @@ function checkDuplicateUsername(username) {
     const query = `SELECT userid FROM ${Env.loginDatabase}.login WHERE ${Settings.usernameCaseSensitive ? 'LOWER(userid) = LOWER(?)' : 'BINARY userid = ?'} LIMIT 1`;
 }
 
-function register(sqlPool, { }) {
+function register(sqlPool, { username, password, email, gender, birthdate }, res) {
     const query = `INSERT INTO ${Env.loginDatabase}.login  (userid, user_pass, email, sex, group_id, birthdate) VALUES (?, ?, ?, ?, ?, ?)`;
+    sqlPool.query(query, [username, password, email, gender, Settings.accountDefaultGroupId, birthdate], (error, results, fields) => {
+        if (error) {
+            res.status(INTERNAL_SERVER_ERROR).json({
+                message: error.message,
+                status: INTERNAL_SERVER_ERROR
+            })
+        }
+
+        
+    })
 }
 
 function validateRequestBody({ username, password, passwordConfirm, email, emailConfirm, gender }) {
