@@ -9,30 +9,23 @@ const handle = app.getRequestHandler();
 
 const server = express();
 
-const sqlCon = mysql.createConnection({
-    host: Env.DB_HOST,
-    user: Env.DB_USER,
-    password: Env.DB_PASS,
-    database: Env.DB_SCHEMA
+const sqlPool = mysql.createPool({
+    connectionLimit:        Env.DB_MAX_CONNECTIONS,
+    host:                   Env.DB_HOST,
+    user:                   Env.DB_USER,
+    password:               Env.DB_PASS,
+    database:               Env.DB_SCHEMA
 });
 
-sqlCon.connect(function (err) {
-    if (err) throw err;
-    console.log("Connected to MySQL!");
-    server.listen(process.env.PORT || 3000, () => {
-        app.prepare().then(() => {
-            server.all('*', (req, res) => {
-                req.sqlConnection = sqlCon;
-                handle(req, res);
-            });
-        }).catch((ex) => {
-            console.error(ex.stack);
-            process.exit(1);
-        })
-        console.log(`Started on port ${process.env.PORT || 3000}`)
+server.listen(process.env.PORT || 3000, () => {
+    app.prepare().then(() => {
+        server.all('*', (req, res) => {
+            req.sqlPool = sqlPool;
+            handle(req, res);
+        });
+    }).catch((ex) => {
+        console.error(ex.stack);
+        process.exit(1);
     })
+    console.log(`Started on port ${process.env.PORT || 3000}`)
 });
-
-module.exports = {
-    sqlCon
-}

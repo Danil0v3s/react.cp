@@ -24,7 +24,7 @@ export default async (req, res) => {
         throw Exception()
     }
 
-    register(req.sqlConnection, req.body);
+    register(req.sqlPool, req.body);
 }
 
 function checkDuplicateEmail(email) {
@@ -35,7 +35,7 @@ function checkDuplicateUsername(username) {
     const query = `SELECT userid FROM ${Env.loginDatabase}.login WHERE ${Settings.usernameCaseSensitive ? 'LOWER(userid) = LOWER(?)' : 'BINARY userid = ?'} LIMIT 1`;
 }
 
-function register() {
+function register(sqlPool, { }) {
     const query = `INSERT INTO ${Env.loginDatabase}.login  (userid, user_pass, email, sex, group_id, birthdate) VALUES (?, ?, ?, ?, ?, ?)`;
 }
 
