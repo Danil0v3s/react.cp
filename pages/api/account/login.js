@@ -3,7 +3,10 @@ const { METHOD_NOT_ALLOWED, BAD_REQUEST, INTERNAL_SERVER_ERROR, CREATED } = requ
 
 export default async (req, res) => {
     if (req.method !== 'POST') {
-        return res.status(METHOD_NOT_ALLOWED);
+        return res.status(METHOD_NOT_ALLOWED).json({
+            status: METHOD_NOT_ALLOWED,
+            message: 'Method not allowed'
+        })
     }
 
     const { username, password } = req.body;
