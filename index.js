@@ -3,6 +3,7 @@ const mysql = require('mysql2');
 const bluebird = require('bluebird');
 const next = require('next');
 const { Env } = require('./config');
+const middleware = require('./config/middleware');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -21,10 +22,18 @@ const sqlPool = mysql.createPool({
 
 server.listen(process.env.PORT || 3000, () => {
     app.prepare().then(() => {
-        server.all('*', (req, res) => {
+        server.get('*', middleware, (req, res) => {
             req.sqlPool = sqlPool.promise();
             handle(req, res);
         });
+        server.post('/api/account/login', (req, res) => {
+            req.sqlPool = sqlPool.promise();
+            handle(req, res);
+        })
+        server.post('/api/account/login', (req, res) => {
+            req.sqlPool = sqlPool.promise();
+            handle(req, res);
+        })
     }).catch((ex) => {
         console.error(ex.stack);
         process.exit(1);
