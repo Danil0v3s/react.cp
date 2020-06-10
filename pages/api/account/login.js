@@ -31,11 +31,9 @@ export default async (req, res) => {
         const [rows, fields] = await req.sqlPool.query(query, [username, password]);
         return res.status(CREATED);
     } catch (ex) {
-        throw ex;
+        return res.status(INTERNAL_SERVER_ERROR).json({
+            status: INTERNAL_SERVER_ERROR,
+            message: ex.message
+        })
     }
-
-    // const creditColumns = 'credits.balance, credits.last_donation_date, credits.last_donation_amount';
-    // const sql = `SELECT login.*, ${creditColumns} FROM ${Env.loginDatabase}.login ` +
-    //             `LEFT OUTER JOIN ${Env.loginDatabase}.${Env.creditsTable} AS credits ON login.account_id = credits.account_id ` +
-    //             `WHERE login.sex != 'S' AND login.userid = ? LIMIT 1`;
 }
