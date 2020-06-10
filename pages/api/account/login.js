@@ -30,24 +30,24 @@ export default async (req, res) => {
 
     try {
         const [rows, fields] = await req.sqlPool.query(query, [username, password]);
-        const { userid, account_id } = rows[0];
 
-        if (userid) {
+        if (rows.length > 0) {
+            const { userid, account_id } = rows[0];
             const userToken = jwt.sign({ userid, accountId: account_id }, Env.JWT_SECRET, { expiresIn: '7d' });
             return res.status(CREATED).json({
                 userid,
                 token: userToken
             });
         } else {
-            return res.status(INTERNAL_SERVER_ERROR).json({
-                status: INTERNAL_SERVER_ERROR,
-                message: 'Failed to retrieve login information'
+            return res.status(BAD_REQUEST).json({
+                status: BAD_REQUEST,
+                message: 'Invalid login'
             })
         }
     } catch (ex) {
         return res.status(INTERNAL_SERVER_ERROR).json({
             status: INTERNAL_SERVER_ERROR,
-            message: ex.message
+            message: 'Failed to retrieve login information'
         })
     }
 }

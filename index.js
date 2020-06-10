@@ -1,5 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2');
+const cors = require('cors');
 const bluebird = require('bluebird');
 const next = require('next');
 const { Env } = require('./config');
@@ -10,6 +11,7 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 const server = express();
+server.use(cors())
 
 const sqlPool = mysql.createPool({
     connectionLimit:        Env.DB_MAX_CONNECTIONS,
