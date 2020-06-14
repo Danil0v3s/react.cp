@@ -49,10 +49,8 @@ const fetchInventory = async (charId, sqlPool) => {
 
     try {
         const [rows, fields] = await sqlPool.query(query, [charId]);
-        const cards = await fetchCardsInfo(rows, sqlPool);
-        return rows.map(item => {
-            return mapCards(item, cards);
-        });
+        const itemsWithCardsInfo = await fetchCardsInfo(rows, sqlPool);
+        return itemsWithCardsInfo;
     } catch (error) {
         throw error;
     }
@@ -73,43 +71,9 @@ const fetchCart = async (charId, sqlPool) => {
 
     try {
         const [rows, fields] = await sqlPool.query(query, [charId]);
-        const cards = await fetchCardsInfo(rows, sqlPool);
-        return rows.map(item => {
-            return mapCards(item, cards);
-        });
+        const itemsWithCardsInfo = await fetchCardsInfo(rows, sqlPool);
+        return itemsWithCardsInfo;
     } catch (error) {
         throw error;
     }
-}
-
-const mapCards = (item, cards) => {
-    if (item.card0 > 0) {
-        item.card0 = {
-            name: cards[item.card0].name_japanese,
-            id: cards[item.card0].id
-        }
-    }
-
-    if (item.card1 > 0) {
-        item.card1 = {
-            name: cards[item.card1].name_japanese,
-            id: cards[item.card1].id
-        }
-    }
-
-    if (item.card2 > 0) {
-        item.card2 = {
-            name: cards[item.card2].name_japanese,
-            id: cards[item.card2].id
-        }
-    }
-
-    if (item.card3 > 0) {
-        item.card3 = {
-            name: cards[item.card3].name_japanese,
-            id: cards[item.card3].id
-        }
-    }
-
-    return item;
 }
