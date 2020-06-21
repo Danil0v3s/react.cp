@@ -21,7 +21,7 @@ export default async ({ body, sqlPool, decoded }, res) => {
 }
 
 const fetchListings = async (sqlPool) => {
-    let query = "SELECT * FROM auction";
+    let query = "SELECT a.*, COALESCE(items.slots, 0) as slots FROM auction a LEFT JOIN item_db_re items ON items.id = a.nameid";
 
     try {
         const [rows, fields] = await sqlPool.query(query);
