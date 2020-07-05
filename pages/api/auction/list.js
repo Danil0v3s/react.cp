@@ -2,7 +2,7 @@ const { Settings, Env } = require('../../../config');
 const { INTERNAL_SERVER_ERROR, OK, BAD_REQUEST } = require('http-status');
 const { fetchCardsInfo } = require('../util');
 
-export default async ({ body, sqlPool, decoded }, res) => {
+const list = async ({ body, sqlPool, decoded }, res) => {
     const { userid, accountId } = decoded;
 
     try {
@@ -31,3 +31,18 @@ const fetchListings = async (sqlPool) => {
         throw error;
     }
 }
+
+const fetchSingleListing = async (sqlPool, listingId) => {
+    let query = "SELECT a.*, COALESCE(items.slots, 0) as slots FROM auction a LEFT JOIN item_db_re items ON items.id = a.nameid WHERE auction_id = ? LIMIT 1";
+
+    try {
+        const [rows, fields] = await sqlPool.query(query, [listingId]);
+        const itemsWithCardsInfo = await fetchCardsInfo(rows, sqlPool);
+        return itemsWithCardsInfo[0];
+    } catch (error) {
+        throw error;
+    }
+}
+
+exports.default = list
+exports.fetchSingleListing = fetchSingleListing

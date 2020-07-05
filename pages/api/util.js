@@ -1,6 +1,6 @@
 const { keyBy } = require('lodash');
 
-export const fetchCardsInfo = async (items, sqlPool) => {
+exports.fetchCardsInfo = async (items, sqlPool) => {
     if (items) {
         let cardIDs = [];
 

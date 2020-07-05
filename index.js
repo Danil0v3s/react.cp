@@ -3,18 +3,32 @@ const mysql = require('mysql2');
 const cors = require('cors');
 const bluebird = require('bluebird');
 const next = require('next');
-const { Env } = require('./config');
-const middleware = require('./config/middleware');
 
+const { Env, Redis: redisConfig } = require('./config');
+const { verifyToken, authorization } = require('./config/middleware');
 const ROBridge = require('./bridge/ROBridge');
 const LoginService = require('./bridge/LoginService');
+const AuctionService = require('./bridge/AuctionService');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
 const server = express();
-server.use(cors())
+server.use(cors());
+const io = require('socket.io')(process.env.SOCKET_IO_PORT || 3030);
+
+io.use((client, next) => {
+    let token = client.handshake.query.token;
+    verifyToken(token, (err, decoded) => {
+        if (err) {
+            return next(new Error('authentication error'));
+        }
+
+        client.handshake.decoded = decoded;
+        next();
+    });
+})
 
 const sqlPool = mysql.createPool({
     connectionLimit: Env.DB_MAX_CONNECTIONS,
@@ -25,34 +39,30 @@ const sqlPool = mysql.createPool({
     Promise: bluebird
 });
 
-const prepareRequest = (req, res, roBridge) => {
-    req.sqlPool = sqlPool.promise();
-    req.roBridge = roBridge;
-    handle(req, res);
-}
-
-const setupRoutes = (roBridge) => {
-    server.get('*', middleware, (req, res) => {
-        prepareRequest(req, res, roBridge);
-    });
-    server.post('/api/account/login', (req, res) => {
-        prepareRequest(req, res, roBridge);
-    });
-    server.post('/api/account/create', (req, res) => {
-        prepareRequest(req, res, roBridge);
-    });
-}
-
 server.listen(process.env.PORT || 3000, () => {
     app.prepare().then(() => {
 
-        const roBridge = new ROBridge();
+        const roBridge = new ROBridge(io, sqlPool.promise());
         roBridge.registerService('login', new LoginService(roBridge, 's1', 'p1', '127.0.0.1', 5121));
+        roBridge.registerService('auction', new AuctionService(roBridge));
 
-        setupRoutes(roBridge);
+        server.all('*', authorization, (req, res) => {
+            req.sqlPool = sqlPool.promise();
+            req.roBridge = roBridge;
+            handle(req, res);
+        });
 
         roBridge.getServiceByKey('login').login();
-        
+
+        io.on('connection', async (client) => {
+            client.on('subscribeToAuction', () => {
+                roBridge.registerUser(client.handshake.decoded.accountId, client.id);
+            })
+            client.on('disconnect', () => {
+                roBridge.removeUser(client.handshake.decoded.accountId)
+            })
+        })
+
     }).catch((ex) => {
         console.error(ex.stack);
         process.exit(1);

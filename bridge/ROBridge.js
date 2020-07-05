@@ -15,12 +15,17 @@ class ROBridge {
     registeredServices = {};
     registeredCommands = {};
     struct = jsStruct;
+    io = undefined;
+    sqlPool = undefined;
+    session = {};
 
-    constructor(host = this.host, port = this.port) {
+    constructor(io, sqlPool, host = this.host, port = this.port) {
         this.client = new net.Socket();
         this.host = host;
         this.port = port;
         this.state = this.CLIENT_STATE_DISCONNECTED;
+        this.io = io;
+        this.sqlPool = sqlPool;
 
         this.connect();
     }
@@ -31,7 +36,7 @@ class ROBridge {
     }
 
     connect() {
-        this.state = this.CLIENT_STATE_CONNECTING;
+        this.state = this.CLIENT_STATE_CONNECTING; 
         this.client.connect({ host: this.host, port: this.port }, () => {
             console.log('ROBridge', 'Connected', this.host, this.port);
             this.state = this.CLIENT_STATE_CONNECTED;
@@ -53,6 +58,18 @@ class ROBridge {
 
     getServiceByKey(key) {
         return this.registeredServices[key];
+    }
+
+    registerUser(accountId, socketId) {
+        if (!this.session.hasOwnProperty(accountId)) {
+            this.session[accountId] = socketId;
+        }
+    }
+
+    removeUser(accountId) {
+        if (this.session.hasOwnProperty(accountId)) {
+            delete this.session[accountId];
+        }
     }
 }
 

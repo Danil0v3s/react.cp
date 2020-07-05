@@ -2,14 +2,25 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('./env');
 const { UNAUTHORIZED, BAD_REQUEST } = require('http-status');
 
+const UNAUTHORIZED_ROUTES = ['/api/account/login', '/api/account/create']
 
-module.exports = (req, res, next) => {
+exports.verifyToken = (token, callback) => {
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) {
+            callback(err, null);
+        } else {
+            callback(null, decoded);
+        }
+    })
+}
+
+exports.authorization = (req, res, next) => {
     let token = req.headers['x-access-token'] || req.headers['authorization'];
     if (token) {
         if (token.startsWith('Bearer ')) {
             token = token.slice(7, token.length);
         }
-        jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        this.verifyToken(token, (err, decoded) => {
             if (err) {
                 return res.status(UNAUTHORIZED).json({
                     status: UNAUTHORIZED,
@@ -20,6 +31,8 @@ module.exports = (req, res, next) => {
                 next();
             }
         })
+    } else if (UNAUTHORIZED_ROUTES.includes(req.originalUrl)) {
+        next();
     } else {
         return res.status(BAD_REQUEST).json({
             status: BAD_REQUEST,

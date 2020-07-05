@@ -1,6 +1,7 @@
-const Settings = require('./settings')
-const Env = require('./env')
+const Settings = require('./settings');
+const Env = require('./env');
+const Redis = require('./redis');
 
 module.exports = {
-    Settings, Env
+    Settings, Env, Redis
 }
