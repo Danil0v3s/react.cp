@@ -36,7 +36,7 @@ class ROBridge {
     }
 
     connect() {
-        this.state = this.CLIENT_STATE_CONNECTING; 
+        this.state = this.CLIENT_STATE_CONNECTING;
         this.client.connect({ host: this.host, port: this.port }, () => {
             console.log('ROBridge', 'Connected', this.host, this.port);
             this.state = this.CLIENT_STATE_CONNECTED;
@@ -50,10 +50,30 @@ class ROBridge {
                 this.registeredCommands[cmd](buffer);
             }
         })
+
+        this.client.on('error', err => {
+            if (err.code == 'ECONNREFUSED') {
+                console.error('Game server not running... Aborting bridge connection');
+                this.state = this.CLIENT_STATE_CONNECTING;
+            }
+        })
     }
 
     write(data) {
-        this.client.write(new Uint8Array(data));
+        try {
+            this.client.write(new Uint8Array(data));
+        } catch(e) {
+            this.state = this.CLIENT_STATE_DISCONNECTED;
+            if (e.code === 'EPIPE') {
+                this.connect();
+                while(this.state !== this.CLIENT_STATE_CONNECTED) {
+                    if (this.state === this.CLIENT_STATE_CONNECTED) {
+                        this.client.write(new Uint8Array(data));
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     getServiceByKey(key) {

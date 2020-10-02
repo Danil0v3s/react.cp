@@ -36,6 +36,7 @@ export default async (req, res) => {
             const userToken = jwt.sign({ userid, accountId: account_id }, Env.JWT_SECRET, { expiresIn: '7d' });
             return res.status(CREATED).json({
                 userid,
+                account_id,
                 token: userToken
             });
         } else {

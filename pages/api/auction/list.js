@@ -21,7 +21,9 @@ const list = async ({ body, sqlPool, decoded }, res) => {
 }
 
 const fetchListings = async (sqlPool) => {
-    let query = "SELECT a.*, COALESCE(items.slots, 0) as slots FROM auction a LEFT JOIN item_db_re items ON items.id = a.nameid";
+    let query = "SELECT a.*, c.account_id, COALESCE(items.slots, 0) as slots FROM auction a "
+    query += "LEFT JOIN item_db_re items ON items.id = a.nameid "
+    query += "LEFT JOIN \`char\` c ON c.char_id = a.seller_id ";
 
     try {
         const [rows, fields] = await sqlPool.query(query);
@@ -33,7 +35,7 @@ const fetchListings = async (sqlPool) => {
 }
 
 const fetchSingleListing = async (sqlPool, listingId) => {
-    let query = "SELECT a.*, COALESCE(items.slots, 0) as slots FROM auction a LEFT JOIN item_db_re items ON items.id = a.nameid WHERE auction_id = ? LIMIT 1";
+    let query = "SELECT a.*, c.account_id, COALESCE(items.slots, 0) as slots FROM auction a LEFT JOIN item_db_re items ON items.id = a.nameid LEFT JOIN \`char\` c ON c.char_id = a.seller_id WHERE auction_id = ? LIMIT 1";
 
     try {
         const [rows, fields] = await sqlPool.query(query, [listingId]);
